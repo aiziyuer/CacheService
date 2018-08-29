@@ -143,7 +143,7 @@ public class TestSpiderServce {
 		Item FINISH_FLAG = new Item();
 
 		// 线程数
-		int threadCount = 1000;
+		int threadCount = 5000;
 
 		// 标记线程是否正在工作
 		boolean[] startWorkingFlag = new boolean[threadCount];
@@ -197,6 +197,7 @@ public class TestSpiderServce {
 						Document doc = Jsoup.parse(body);
 						List<Item> items = doc.select("a[href]").stream() //
 								.map(e -> e.attr("href")) // 取出超链接
+								.filter(a -> StringUtils.isBlank(a)) // 不允许链接为空
 								.filter(a -> !StringUtils.equals(a, "../")) // 返回上一级需要忽略
 								.filter(a -> !StringUtils.equals(a, "\"")) // 以双引号开始的, 应该是循环引用
 								.map(a -> {
