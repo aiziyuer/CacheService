@@ -197,9 +197,8 @@ public class TestSpiderServce {
 						Document doc = Jsoup.parse(body);
 						List<Item> items = doc.select("a[href]").stream() //
 								.map(e -> e.attr("href")) // 取出超链接
-								.filter(a -> StringUtils.isBlank(a)) // 不允许链接为空
+								.filter(a -> StringUtils.isNotBlank(a)) // 忽略空白符
 								.filter(a -> !StringUtils.equals(a, "../")) // 返回上一级需要忽略
-								.filter(a -> !StringUtils.equals(a, "\"")) // 以双引号开始的, 应该是循环引用
 								.map(a -> {
 
 									Item item = new Item();
