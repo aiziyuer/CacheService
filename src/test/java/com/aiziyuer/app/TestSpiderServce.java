@@ -56,14 +56,14 @@ public class TestSpiderServce {
 
 	private CloseableHttpClient getHttpClient() throws NoSuchAlgorithmException, KeyManagementException {
 
-//		HttpHost proxy = new HttpHost("127.0.0.1", 3128);
+		// HttpHost proxy = new HttpHost("127.0.0.1", 3128);
 
 		RequestConfig requestConfig = RequestConfig.custom() //
 				.setConnectionRequestTimeout(86400) //
 				.setSocketTimeout(86400) //
 				.setConnectTimeout(86400) //
 				.setCookieSpec(CookieSpecs.DEFAULT) //
-//				.setProxy(proxy) // 代理
+				// .setProxy(proxy) // 代理
 				.build();
 
 		SSLContext sc = SSLContext.getInstance("TLS");
@@ -103,6 +103,8 @@ public class TestSpiderServce {
 	@Test
 	public void scan() throws KeyManagementException, NoSuchAlgorithmException, IOException {
 
+		String baseUrl = "http://repo1.maven.org/maven2/";
+
 		// 所有文件的集合
 		Set<String> remoteFileSet = Collections.synchronizedSet(new HashSet<String>());
 
@@ -113,7 +115,7 @@ public class TestSpiderServce {
 		Item FINISH_FLAG = new Item();
 
 		// 线程数
-		int threadCount = 500;
+		int threadCount = 1000;
 
 		// 标记线程是否正在工作
 		boolean[] startWorkingFlag = new boolean[threadCount];
@@ -150,19 +152,9 @@ public class TestSpiderServce {
 						// 工作线程进入工作
 						startWorkingFlag[threadIndex] = true;
 
-						// 如果是文件就直接记录
-						if (currentItem.isFile()) {
-							synchronized (remoteFileSet) {
-//								remoteFileSet.add(currentItem.url);
-							}
-							// 任务结束
-							startWorkingFlag[threadIndex] = false;
-							continue;
-						}
-
 						log.info("list currentItem.ur: " + currentItem.url);
 
-						CloseableHttpResponse response = httpClient.execute(new HttpGet(currentItem.url));
+						CloseableHttpResponse response = httpClient.execute(new HttpGet(baseUrl + currentItem.url));
 						if (response.getStatusLine().getStatusCode() != 200 || response.getEntity() == null)
 							return;
 
@@ -182,8 +174,17 @@ public class TestSpiderServce {
 								}) //
 								.collect(Collectors.toList());
 
+						// 文件直接记录
+//						List<String> files = items.stream().filter(item -> item.isFile()).map(item -> item.url)
+//								.collect(Collectors.toList());
+//						synchronized (remoteFileSet) {
+//							remoteFileSet.addAll(files);
+//						}
+
+						// 目录放入队列继续遍历
+						List<Item> folders = items.stream().filter(item -> !item.isFile()).collect(Collectors.toList());
 						synchronized (g_queue) {
-							g_queue.addAll(items);
+							g_queue.addAll(folders);
 						}
 
 						// 工作线程结束
@@ -203,8 +204,7 @@ public class TestSpiderServce {
 		}
 
 		Item home = new Item();
-		home.url = "http://repo1.maven.org/maven2/";
-//		home.url = "http://repo1.maven.org/maven2/ee/bitweb/bitweb-ogone/";
+		home.url = "";
 		g_queue.add(home);
 
 		while (true) {
