@@ -54,6 +54,34 @@ public class TestSpiderServce {
 		}
 	}
 
+	public static class URLParamEncoder {
+
+		public static String encode(String input) {
+			StringBuilder resultStr = new StringBuilder();
+			for (char ch : input.toCharArray()) {
+				if (isUnsafe(ch)) {
+					resultStr.append('%');
+					resultStr.append(toHex(ch / 16));
+					resultStr.append(toHex(ch % 16));
+				} else {
+					resultStr.append(ch);
+				}
+			}
+			return resultStr.toString();
+		}
+
+		private static char toHex(int ch) {
+			return (char) (ch < 10 ? '0' + ch : 'A' + ch - 10);
+		}
+
+		private static boolean isUnsafe(char ch) {
+			if (ch > 128 || ch < 0)
+				return true;
+			return " %$&+,;=?@<>#%".indexOf(ch) >= 0;
+		}
+
+	}
+
 	private CloseableHttpClient getHttpClient() throws NoSuchAlgorithmException, KeyManagementException {
 
 		// HttpHost proxy = new HttpHost("127.0.0.1", 3128);
@@ -153,9 +181,10 @@ public class TestSpiderServce {
 						startWorkingFlag[threadIndex] = true;
 
 						String listUrl = baseUrl + currentItem.url;
-						log.info("listUrl: " + listUrl);
+						log.info("listUrl: " + currentItem.url);
 
-						CloseableHttpResponse response = httpClient.execute(new HttpGet(listUrl));
+						CloseableHttpResponse response = httpClient
+								.execute(new HttpGet(URLParamEncoder.encode(listUrl)));
 						if (response.getStatusLine().getStatusCode() != 200 || response.getEntity() == null) {
 							startWorkingFlag[threadIndex] = false;
 							log.error("listUrl error, statusCode: " + response.getStatusLine().getStatusCode()
@@ -167,8 +196,9 @@ public class TestSpiderServce {
 
 						Document doc = Jsoup.parse(body);
 						List<Item> items = doc.select("a[href]").stream() //
-								.map(e -> e.attr("href")) //
-								.filter(a -> !StringUtils.equals(a, "../")) //
+								.map(e -> e.attr("href")) // 取出超链接
+								.filter(a -> !StringUtils.equals(a, "../")) // 返回上一级需要忽略
+								.filter(a -> !StringUtils.equals(a, "\"")) // 以双引号开始的, 应该是循环引用
 								.map(a -> {
 
 									Item item = new Item();
