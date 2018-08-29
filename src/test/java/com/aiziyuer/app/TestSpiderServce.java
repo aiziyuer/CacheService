@@ -153,7 +153,7 @@ public class TestSpiderServce {
 						// 如果是文件就直接记录
 						if (currentItem.isFile()) {
 							synchronized (remoteFileSet) {
-								remoteFileSet.add(currentItem.url);
+//								remoteFileSet.add(currentItem.url);
 							}
 							// 任务结束
 							startWorkingFlag[threadIndex] = false;
