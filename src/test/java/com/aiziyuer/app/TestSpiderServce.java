@@ -20,7 +20,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHost;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -57,14 +56,14 @@ public class TestSpiderServce {
 
 	private CloseableHttpClient getHttpClient() throws NoSuchAlgorithmException, KeyManagementException {
 
-		 HttpHost proxy = new HttpHost("127.0.0.1", 3128);
+		// HttpHost proxy = new HttpHost("127.0.0.1", 3128);
 
 		RequestConfig requestConfig = RequestConfig.custom() //
 				.setConnectionRequestTimeout(86400) //
 				.setSocketTimeout(86400) //
 				.setConnectTimeout(86400) //
 				.setCookieSpec(CookieSpecs.DEFAULT) //
-				 .setProxy(proxy) // 代理
+				// .setProxy(proxy) // 代理
 				.build();
 
 		SSLContext sc = SSLContext.getInstance("TLS");
@@ -116,7 +115,7 @@ public class TestSpiderServce {
 		Item FINISH_FLAG = new Item();
 
 		// 线程数
-		int threadCount = 10;
+		int threadCount = 1000;
 
 		// 标记线程是否正在工作
 		boolean[] startWorkingFlag = new boolean[threadCount];
@@ -157,8 +156,12 @@ public class TestSpiderServce {
 						log.info("listUrl: " + listUrl);
 
 						CloseableHttpResponse response = httpClient.execute(new HttpGet(listUrl));
-						if (response.getStatusLine().getStatusCode() != 200 || response.getEntity() == null)
-							return;
+						if (response.getStatusLine().getStatusCode() != 200 || response.getEntity() == null) {
+							startWorkingFlag[threadIndex] = false;
+							log.error("listUrl error, statusCode: " + response.getStatusLine().getStatusCode()
+									+ " entity: " + String.valueOf(response.getEntity()));
+							continue;
+						}
 
 						String body = EntityUtils.toString(response.getEntity(), "utf-8");
 
@@ -207,7 +210,7 @@ public class TestSpiderServce {
 		}
 
 		Item home = new Item();
-		home.url = "";
+		home.url = "/";
 		g_queue.add(home);
 
 		while (true) {
