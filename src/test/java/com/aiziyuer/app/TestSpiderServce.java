@@ -20,6 +20,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpHost;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -56,14 +57,14 @@ public class TestSpiderServce {
 
 	private CloseableHttpClient getHttpClient() throws NoSuchAlgorithmException, KeyManagementException {
 
-		// HttpHost proxy = new HttpHost("127.0.0.1", 3128);
+		 HttpHost proxy = new HttpHost("127.0.0.1", 3128);
 
 		RequestConfig requestConfig = RequestConfig.custom() //
 				.setConnectionRequestTimeout(86400) //
 				.setSocketTimeout(86400) //
 				.setConnectTimeout(86400) //
 				.setCookieSpec(CookieSpecs.DEFAULT) //
-				// .setProxy(proxy) // 代理
+				 .setProxy(proxy) // 代理
 				.build();
 
 		SSLContext sc = SSLContext.getInstance("TLS");
@@ -103,7 +104,7 @@ public class TestSpiderServce {
 	@Test
 	public void scan() throws KeyManagementException, NoSuchAlgorithmException, IOException {
 
-		String baseUrl = "http://repo1.maven.org/maven2/";
+		String baseUrl = "http://repo1.maven.org/maven2";
 
 		// 所有文件的集合
 		Set<String> remoteFileSet = Collections.synchronizedSet(new HashSet<String>());
@@ -115,7 +116,7 @@ public class TestSpiderServce {
 		Item FINISH_FLAG = new Item();
 
 		// 线程数
-		int threadCount = 1000;
+		int threadCount = 10;
 
 		// 标记线程是否正在工作
 		boolean[] startWorkingFlag = new boolean[threadCount];
@@ -152,9 +153,10 @@ public class TestSpiderServce {
 						// 工作线程进入工作
 						startWorkingFlag[threadIndex] = true;
 
-						log.info("list currentItem.ur: " + currentItem.url);
+						String listUrl = baseUrl + currentItem.url;
+						log.info("listUrl: " + listUrl);
 
-						CloseableHttpResponse response = httpClient.execute(new HttpGet(baseUrl + currentItem.url));
+						CloseableHttpResponse response = httpClient.execute(new HttpGet(listUrl));
 						if (response.getStatusLine().getStatusCode() != 200 || response.getEntity() == null)
 							return;
 
@@ -175,11 +177,12 @@ public class TestSpiderServce {
 								.collect(Collectors.toList());
 
 						// 文件直接记录
-//						List<String> files = items.stream().filter(item -> item.isFile()).map(item -> item.url)
-//								.collect(Collectors.toList());
-//						synchronized (remoteFileSet) {
-//							remoteFileSet.addAll(files);
-//						}
+						// List<String> files = items.stream().filter(item -> item.isFile()).map(item ->
+						// item.url)
+						// .collect(Collectors.toList());
+						// synchronized (remoteFileSet) {
+						// remoteFileSet.addAll(files);
+						// }
 
 						// 目录放入队列继续遍历
 						List<Item> folders = items.stream().filter(item -> !item.isFile()).collect(Collectors.toList());
