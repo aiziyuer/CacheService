@@ -54,34 +54,6 @@ public class TestSpiderServce {
 		}
 	}
 
-	public static class URLParamEncoder {
-
-		public static String encode(String input) {
-			StringBuilder resultStr = new StringBuilder();
-			for (char ch : input.toCharArray()) {
-				if (isUnsafe(ch)) {
-					resultStr.append('%');
-					resultStr.append(toHex(ch / 16));
-					resultStr.append(toHex(ch % 16));
-				} else {
-					resultStr.append(ch);
-				}
-			}
-			return resultStr.toString();
-		}
-
-		private static char toHex(int ch) {
-			return (char) (ch < 10 ? '0' + ch : 'A' + ch - 10);
-		}
-
-		private static boolean isUnsafe(char ch) {
-			if (ch > 128 || ch < 0)
-				return true;
-			return " %$&+,;=?@<>{}#%".indexOf(ch) >= 0;
-		}
-
-	}
-
 	private CloseableHttpClient getHttpClient() throws NoSuchAlgorithmException, KeyManagementException {
 
 		// HttpHost proxy = new HttpHost("127.0.0.1", 3128);
@@ -143,7 +115,7 @@ public class TestSpiderServce {
 		Item FINISH_FLAG = new Item();
 
 		// 线程数
-		int threadCount = 5000;
+		int threadCount = 1000;
 
 		// 标记线程是否正在工作
 		boolean[] startWorkingFlag = new boolean[threadCount];
@@ -183,8 +155,7 @@ public class TestSpiderServce {
 						String listUrl = baseUrl + currentItem.url;
 						log.info("listUrl: " + currentItem.url);
 
-						CloseableHttpResponse response = httpClient
-								.execute(new HttpGet(URLParamEncoder.encode(listUrl)));
+						CloseableHttpResponse response = httpClient.execute(new HttpGet(listUrl));
 						if (response.getStatusLine().getStatusCode() != 200 || response.getEntity() == null) {
 							startWorkingFlag[threadIndex] = false;
 							log.error("listUrl error, statusCode: " + response.getStatusLine().getStatusCode()
